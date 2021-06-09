@@ -7,6 +7,7 @@ library(magrittr)
 library(factoextra)
 library(ggplot2)
 library(ggfortify)
+library(psych)
 
 setwd("D:/Dropbox/Forest Composition/composition/Maps/shapefiles/PatchProject/EdgeClusters")
 
@@ -67,6 +68,12 @@ fviz_nbclust(df[,7:20], kmeans, nstart = 25,  method = "gap_stat", nboot = 50)+
 
 #Let's just visualize with a PCA
 
+#visualize relationships
+pairs.panels(df[,7:20])
+
+#Many of the variables are strongly and linearly correlated. It may be appropriate
+#to drop some of these variables.
+
 PCA <-prcomp(df[,7:20])
 
 biplot(PCA, choices = c(1,2)) #First two axes
@@ -76,4 +83,8 @@ biplot(PCA, choices = c(2,3)) #second and third axes
 
 #Let's visualize it with the colors from our land use types.
 
-autoplot(PCA, data = df, colour = 'Land_Class')
+autoplot(PCA, data = df, colour = 'Land_Class',
+         loadings = TRUE,
+         loadings.label = TRUE, loadings.label.size = 3, choices = c(2,3))
+
+ggbiplot::ggbiplot(PCA)
