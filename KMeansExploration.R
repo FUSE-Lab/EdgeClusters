@@ -3,33 +3,51 @@
 #Load libraries and set wd
 
 library(tidyverse)
+library(tidylog)  #more verbose tidyverse
 library(magrittr)
-library(factoextra)
+library(factoextra) #K clustering
 library(ggplot2)
-library(ggfortify)
-library(psych)
+library(ggfortify) #Prettier PCA
+library(psych)  #Decent, generic pairs plot 
+library(GGally) #For customizable pairs plot
 
 setwd("D:/Dropbox/Forest Composition/composition/Maps/shapefiles/PatchProject/EdgeClusters")
 
 #Load data
 
-df <- read_csv('Canopy_Metrics_Filtered_20210520.csv') 
+df <- read_csv('Metrics_Filtered_Organized_20210602.csv') 
 
 summary(df)
 
 #Many of the variables are out of scale with each other. We'll fix this by multiplying by a scaler
 
-df %<>% mutate(den_m2 = den_m2/100,
-               vert.sd_m =  vert.sd_m/10,
-               VAI = VAI/10,
-               maxZ_m = maxZ_m/100,
-               max.canopy.ht_m = max.canopy.ht_m/100,
-               mean.max.canopy.ht_m = mean.max.canopy.ht_m/100,
-               q0_m = q0_m/10,
-               q25_m = q25_m/100,
-               q50_m = q50_m/100,
-               q75_m = q75_m/100,
-               q100_m = q100_m/100)
+#This code worked for the original document. Updating it for the new version
+# df %<>% mutate(den_m2 = den_m2/100,
+#                vert.sd_m =  vert.sd_m/10,
+#                VAI = VAI/10,
+#                maxZ_m = maxZ_m/100,
+#                max.canopy.ht_m = max.canopy.ht_m/100,
+#                mean.max.canopy.ht_m = mean.max.canopy.ht_m/100,
+#                q0_m = q0_m/10,
+#                q25_m = q25_m/100,
+#                q50_m = q50_m/100,
+#                q75_m = q75_m/100,
+#                q100_m = q100_m/100)
+
+#New file
+
+df %<>% mutate(vert.sd =  vert.sd/10,
+              sd.sd = sd.sd/10,
+              maxZ_ft = maxZ_ft/100,
+              rumple = rumple/10,
+              top.rugosity = top.rugosity/10,
+              max.canopy.ht_ft = max.canopy.ht_ft/100,
+              mean.max.canopy.ht_ft = mean.max.canopy.ht_ft/100,
+              q0 = q0/10,
+              q25 = q25/10,
+              q50 = q50/100,
+              q75 = q75/100,
+              q100 = q100/100)
 
 summary(df) #Better!
 
@@ -68,13 +86,19 @@ fviz_nbclust(df[,7:20], kmeans, nstart = 25,  method = "gap_stat", nboot = 50)+
 
 #Let's just visualize with a PCA
 
+#Drop some unnecessary variables
+
+df2 <- df[,-c(1:2,5:7,16:18,20)]
+
+colnames(df2) #better
+
 #visualize relationships
-pairs.panels(df[,7:20])
+pairs.panels(df2[,3:18])
 
 #Many of the variables are strongly and linearly correlated. It may be appropriate
 #to drop some of these variables.
 
-PCA <-prcomp(df[,7:20])
+PCA <-prcomp(df2[,3:18])
 
 biplot(PCA, choices = c(1,2)) #First two axes
 biplot(PCA, choices = c(2,3)) #second and third axes
@@ -83,8 +107,14 @@ biplot(PCA, choices = c(2,3)) #second and third axes
 
 #Let's visualize it with the colors from our land use types.
 
-autoplot(PCA, data = df, colour = 'Land_Class',
+autoplot(PCA, data = df2, colour = 'Land_Class',
          loadings = TRUE,
-         loadings.label = TRUE, loadings.label.size = 3, choices = c(2,3))
+         loadings.label = TRUE, loadings.label.size = 3)
 
-ggbiplot::ggbiplot(PCA)
+
+#Let's try to make a prettier version of the pairs panel.
+
+ggpairs(df2, columns = 3:19) #Ugh. What a mess. Let's just look at the most influential ones from the PCA
+
+ggpairs(df2, columns = c(3,7,10,12), ggplot2::aes(colour=Land_Class, alpha = 0.1))
+
